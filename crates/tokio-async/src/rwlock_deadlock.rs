@@ -45,7 +45,6 @@ mod tests {
         });
     }
 
-
     #[test]
     #[should_panic(expected = "死锁发生")]
     fn tokio_rwlock_read_write_conflict_deadlock() {

@@ -258,6 +258,7 @@ dependencies = [
 name = "tokio-async"
 version = "0.1.0"
 dependencies = [
+ "parking_lot",
  "tokio",
 ]
 

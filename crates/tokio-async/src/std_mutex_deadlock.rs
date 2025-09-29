@@ -56,6 +56,33 @@ mod tests {
     }
 
     #[test]
+    #[should_panic(expected = "死锁发生")]
+    /// 使用std::sync::Mutex在 一个线程中发生panic会导致死锁
+    fn std_mutex_deadlock_in_panic_thread() {
+        let test_completed = Arc::new(std::sync::Mutex::new(false));
+        let test_completed_clone = Arc::clone(&test_completed);
+        thread::spawn(move || {
+            let num = Arc::new(std::sync::Mutex::new(0));
+            let num_clone = Arc::clone(&num);
+            thread::spawn(move || {
+                let mut n = num_clone.lock().unwrap();
+                *n += 1;
+                panic!("work thread panic");
+            });
+            thread::sleep(Duration::from_secs(1));
+            println!("num = {}", *num.lock().unwrap());
+            *test_completed_clone.lock().unwrap() = true;
+        });
+
+        // 等待足够长时间
+        thread::sleep(Duration::from_secs(3));
+
+        let completed = *test_completed.lock().unwrap();
+        if !completed {
+            panic!("死锁发生：std::sync::Mutex 在 panic 线程中导致死锁");
+        }
+    }
+    #[test]
     /// 使用tokio::sync::Mutex在同样的逻辑下不会导致死锁
     fn tokio_mutex_deadlock() {
         let rt = Runtime::new().unwrap();
